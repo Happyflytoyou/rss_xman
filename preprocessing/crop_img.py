@@ -48,6 +48,7 @@ def splitimage(img_src, rows, cols, des_path, filename):
         i += sig_box[0]
         row += 1
 
+import symbol
 
 source_path = "/home/ubuntu/PycharmProjects/datasets/rssrai2019_cd_v2/"
 des_path = "/home/ubuntu/PycharmProjects/datasets/rssrai2019_croped/"

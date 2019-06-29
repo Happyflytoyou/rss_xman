@@ -184,7 +184,7 @@ class Dataset(Dataset):
                label = self.transform_med(label)
             label = np.array(label,dtype=np.int32)
         '''''''''
-        return img1,img2,label#,str(filename),int(height),int(width)
+        return img1,img2,label,str(filename),int(height),int(width)
 
     def __len__(self):
 

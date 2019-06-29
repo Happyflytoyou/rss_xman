@@ -6,9 +6,8 @@ import scipy.io
 import scipy.misc as m
 from PIL import Image
 import matplotlib.pyplot as plt
-import utils.transforms as trans
 import cv2
-import cfgs.rssia_config as cfg
+import config.rssia_config as cfg
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -101,7 +100,7 @@ class Dataset(Dataset):
         if self.flag =='train':
             for idx , did in enumerate(open(self.img_txt_path)):
                 try:
-                    image1_name,image2_name,mask_name = did.strip("\n").split(' ')
+                    image1_name,image2_name,mask_name = did.strip("\n").strip(' ').split(' ')
                 except ValueError:  # Adhoc for test.
                     image_name = mask_name = did.strip("\n")
                 extract_name = image1_name[image1_name.rindex('/') +1: image1_name.rindex('.')]
@@ -147,7 +146,7 @@ class Dataset(Dataset):
         img2 = img2.transpose(2, 0, 1)
         img2 = torch.from_numpy(img2).float()
         if self.flag != 'test':
-          lbl = torch.from_numpy(np.where(lbl>128,1,0)).long()
+          lbl = torch.from_numpy(np.where(lbl>128,1.0,0.0)).float()
           #lbl_reverse = torch.from_numpy(lbl_reverse).long()
         return img1,img2,lbl
 
@@ -184,7 +183,7 @@ class Dataset(Dataset):
                label = self.transform_med(label)
             label = np.array(label,dtype=np.int32)
         '''''''''
-        return img1,img2,label,str(filename),int(height),int(width)
+        return img1,img2,label#,str(filename),int(height),int(width)
 
     def __len__(self):
 

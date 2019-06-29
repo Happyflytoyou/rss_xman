@@ -102,7 +102,7 @@ class SiamUNet(nn.Module):
         x1_4_0 = self.conv4_0(self.pool(x1_3_0))
         x2_4_0 = self.conv4_0(self.pool(x2_3_0))
         x4_0 = x2_4_0 - x1_4_0
-        x4_0 = self.bn4(x4_0)
+        x4_0 = self.bn5(x4_0)
         x3_1 = self.conv3_1(torch.cat([x3_0, self.Up(x4_0)], 1))
         x2_2 = self.conv2_2(torch.cat([x2_0, x2_1, self.Up(x3_1)], 1))
         x1_3 = self.conv1_3(torch.cat([x1_0, x1_1, x1_2, self.Up(x2_2)], 1))

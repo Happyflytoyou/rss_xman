@@ -146,8 +146,9 @@ class Dataset(Dataset):
         img2 = img2.transpose(2, 0, 1)
         img2 = torch.from_numpy(img2).float()
         if self.flag != 'test':
-          lbl = torch.from_numpy(np.where(lbl>128,1.0,0.0)).float()
-          #lbl_reverse = torch.from_numpy(lbl_reverse).long()
+            lbl=np.expand_dims(lbl, axis=0)
+            lbl = torch.from_numpy(np.where(lbl>128,1.0,0.0)).float()
+            #lbl_reverse = torch.from_numpy(lbl_reverse).long()
         return img1,img2,lbl
 
     def __getitem__(self, index):
@@ -183,7 +184,7 @@ class Dataset(Dataset):
                label = self.transform_med(label)
             label = np.array(label,dtype=np.int32)
         '''''''''
-        return img1,img2,label#,str(filename),int(height),int(width)
+        return img1,img2,label,str(filename),int(height),int(width)
 
     def __len__(self):
 

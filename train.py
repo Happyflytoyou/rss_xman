@@ -26,6 +26,11 @@ def main():
     val_dataloader = DataLoader(val_data, batch_size=cfg.BATCH_SIZE, shuffle=False, num_workers=8, pin_memory=True)
 
     model = SiamUNet()
+    if cfg.RESUME:
+        checkpoint = torch.load(cfg.TRAINED_LAST_MODEL)
+        model.load_state_dict(checkpoint['state_dict'])
+        print('resume success \n')
+
     if torch.cuda.is_available():
         model.cuda()
 
@@ -40,7 +45,9 @@ def main():
         #training--------------------------
         train_loss = 0
         train_acc = 0
-        for batch_x1, batch_x2, batch_y in train_dataloader:
+        for batch_idx, train_batch in enumerate(train_dataloader):
+            model.train()
+            batch_x1, batch_x2, batch_y, _, _, _ = train_batch
             batch_x1, batch_x2, batch_y = Variable(batch_x1).cuda(), Variable(batch_x2).cuda(), Variable(batch_y).cuda()
             out = model(batch_x1, batch_x2)
             loss = calc_loss(out, batch_y)
@@ -52,9 +59,21 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print("Train Loss: {:.6f}, Acc: {:.6f}".format(0, loss))
+
+
+            if(batch_idx) % 5 == 0:
+                model.eval()
+                val_loss = 0
+                for v_batch_idx, val_batch in enumerate(val_dataloader):
+                    v_batch_x1, v_batch_x2, v_batch_y, _, _, _ = val_batch
+                    val_out = model(v_batch_x1,v_batch_x2)
+                    val_loss += calc_loss(val_out, v_batch_y)
+                print("Train Loss: {:.6f}  Val Loss: {:.6f}".format(loss, val_loss))
+
         if (epoch+1)%5 == 0:
             torch.save({'state_dict':model.state_dict()},
                        os.path.join(cfg.SAVE_MODEL_PATH, 'model'+str(epoch+1)+'.pth'))
+        torch.save({'state_dict': model.state_dict()},
+                   os.path.join(cfg.SAVE_MODEL_PATH, 'model_last.pth'))
 if __name__ == '__main__':
     main()

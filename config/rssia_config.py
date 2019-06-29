@@ -1,8 +1,8 @@
 import os
 
-BASE_PATH = '/media/ubuntu/45860a09-77fc-4f27-8cf3-5739e384e61d/huangw/rss_xman'
+BASE_PATH = '/home/ubuntu/PycharmProjects/rss_xman'
 PRETRAIN_MODEL_PATH = os.path.join(BASE_PATH, 'pretrained')
-DATA_PATH = '/media/ubuntu/45860a09-77fc-4f27-8cf3-5739e384e61d/huangw/rss_xman/datasets/rssrai2019_croped'
+DATA_PATH = '/home/ubuntu/PycharmProjects/datasets/rssrai2019_croped'
 TRAIN_DATA_PATH = os.path.join(DATA_PATH,'train')
 TRAIN_LABEL_PATH = os.path.join(TRAIN_DATA_PATH)
 TRAIN_TXT_PATH = os.path.join(TRAIN_DATA_PATH, 'train.txt')

@@ -26,7 +26,7 @@ def dice_loss(prediction, target):
     return 1 - ((2. * intersection + smooth) / (i_flat.sum() + t_flat.sum() + smooth))
 
 
-def calc_loss(prediction, target, bce_weight=0.5,margin=2):
+def calc_loss(prediction, target, bce_weight=0.5, margin=2):
     """Calculating the loss and metrics
     Args:
         prediction = predicted image
@@ -34,14 +34,18 @@ def calc_loss(prediction, target, bce_weight=0.5,margin=2):
         metrics = Metrics printed
         bce_weight = 0.5 (default)
     Output:
-        loss : dice loss of the epoch """
-    # bce = F.binary_cross_entropy_with_logits(prediction, target)
-    bce = torch.sum((1-target)*torch.pow(prediction,2 ) + \
-                                       target * torch.pow(torch.clamp(margin - prediction, min=0.0),2))
+        # loss : dice loss of the epoch """
+    bce = F.binary_cross_entropy_with_logits(prediction, target)
+
+    # criterion = nn.BCELoss()
+    # bce = criterion(prediction, target)
+    # bce = F.binary_cross_entropy(prediction, target)
+    # bce = torch.sum((1-target)*torch.pow(prediction,2 ) + \
+    #                                    target * torch.pow(torch.clamp(margin - prediction, min=0.0),2))
     prediction = F.sigmoid(prediction)
     dice = dice_loss(prediction, target)
 
     loss = bce * bce_weight + dice * (1 - bce_weight)
 
-    return loss
+    return bce
 

@@ -52,7 +52,7 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print("Train Loss: {:.6f}, Acc: {:.6f}".format(0, loss))
+            print("Train Loss: {:.6f}, Acc: {:.6f}".format(loss, 0))
         if (epoch+1)%5 == 0:
             torch.save({'state_dict':model.state_dict()},
                        os.path.join(cfg.SAVE_MODEL_PATH, 'model'+str(epoch+1)+'.pth'))

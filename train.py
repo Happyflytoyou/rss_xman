@@ -3,7 +3,7 @@ from torch.autograd import Variable
 import torch
 import torch.optim as optim
 from models.Siam_unet import SiamUNet
-from models.loss import calc_loss
+from models.loss import calc_loss, FocalLoss2d
 import utils.dataset as my_dataset
 import config.rssia_config as cfg
 import preprocessing.transforms as trans
@@ -50,7 +50,10 @@ def main():
             batch_x1, batch_x2, batch_y, _, _, _ = train_batch
             batch_x1, batch_x2, batch_y = Variable(batch_x1).cuda(), Variable(batch_x2).cuda(), Variable(batch_y).cuda()
             out = model(batch_x1, batch_x2)
-            loss = calc_loss(out, batch_y)
+            if(cfg.TRAIN_LOSS == 'focalloss'):
+                loss = FocalLoss2d(out,batch_y)
+            else:
+                loss = calc_loss(out, batch_y)
             # train_loss += loss.data[0]
             #should change after
             pred = torch.max(out, 1)[0]
@@ -68,7 +71,7 @@ def main():
                     v_batch_x1, v_batch_x2, v_batch_y, _, _, _ = val_batch
                     val_out = model(v_batch_x1,v_batch_x2)
                     val_loss += calc_loss(val_out, v_batch_y)
-                print("Train Loss: {:.6f}  Val Loss: {:.6f}".format(loss, val_loss))
+                print("Train Loss: {:.6f}  Val Loss: {:.10f}".format(loss, val_loss))
 
         if (epoch+1)%5 == 0:
             torch.save({'state_dict':model.state_dict()},

@@ -49,3 +49,16 @@ def calc_loss(prediction, target, bce_weight=0.5, margin=2):
 
     return bce
 
+
+class FocalLoss2d(torch.nn.Module):
+    def __init__(self, weight=None, size_average=True, ignore_index=255):
+        super(FocalLoss2d, self).__init__()
+        self.gamma = 2
+        self.nll_loss = torch.nn.NLLLoss2d(weight, size_average)
+
+    def forward(self, inputs, targets):
+        return self.nll_loss((1 - F.sigmoid(inputs, 1)) ** self.gamma * F.log_softmax(inputs, 1), targets)
+
+
+
+

@@ -66,6 +66,8 @@ def main():
                 val_loss = 0
                 for v_batch_idx, val_batch in enumerate(val_dataloader):
                     v_batch_x1, v_batch_x2, v_batch_y, _, _, _ = val_batch
+                    v_batch_x1, v_batch_x2, v_batch_y = Variable(v_batch_x1).cuda(), Variable(v_batch_x2).cuda(), Variable(
+                        v_batch_y).cuda()
                     val_out = model(v_batch_x1,v_batch_x2)
                     val_loss += calc_loss(val_out, v_batch_y)
                 print("Train Loss: {:.6f}  Val Loss: {:.6f}".format(loss, val_loss))

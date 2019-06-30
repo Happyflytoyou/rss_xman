@@ -1,8 +1,8 @@
 import os
 
-BASE_PATH = '/home/ubuntu/PycharmProjects/rss_xman'
+BASE_PATH = '/media/ubuntu/45860a09-77fc-4f27-8cf3-5739e384e61d/huangw/rss_xman'
 PRETRAIN_MODEL_PATH = os.path.join(BASE_PATH, 'pretrained')
-DATA_PATH = '/home/ubuntu/PycharmProjects/datasets/rssrai2019_croped'
+DATA_PATH = '/media/ubuntu/45860a09-77fc-4f27-8cf3-5739e384e61d/huangw/rss_xman/datasets/rssrai2019_croped'
 TRAIN_DATA_PATH = os.path.join(DATA_PATH,'train')
 TRAIN_LABEL_PATH = os.path.join(TRAIN_DATA_PATH)
 TRAIN_TXT_PATH = os.path.join(TRAIN_DATA_PATH, 'train.txt')
@@ -22,7 +22,7 @@ if not os.path.exists(SAVE_CKPT_PATH):
 SAVE_PRED_PATH = os.path.join(SAVE_PATH, 'prediction')
 if not os.path.exists(SAVE_PRED_PATH):
     os.makedirs(SAVE_PRED_PATH)
-TRAINED_LAST_MODEL = os.path.join(SAVE_CKPT_PATH, 'model_best.pth')
+TRAINED_LAST_MODEL = os.path.join(SAVE_MODEL_PATH, 'model_last.pth')
 INIT_LEARNING_RATE = 0.0002
 DECAY = 5e-5
 MOMENTUM = 0.90

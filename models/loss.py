@@ -47,5 +47,5 @@ def calc_loss(prediction, target, bce_weight=0.5, margin=2):
 
     loss = bce * bce_weight + dice * (1 - bce_weight)
 
-    return bce
+    return loss
 

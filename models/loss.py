@@ -58,7 +58,7 @@ class FocalLoss2d(torch.nn.Module):
     def forward(self, inputs, targets):
         return self.nll_loss((1 - F.sigmoid(inputs, 1)) ** self.gamma * F.logsigmoid(inputs, 1), targets)
 def sigmoid_focalloss(input, target, gamma):
-    return F.nll_loss((1 - F.sigmoid(input,1)) ** gamma * F.logsigmoid(input,1), target)
+    return F.nll_loss((1 - F.sigmoid(input)) ** gamma * F.logsigmoid(input), target)
 
 
 

@@ -3,7 +3,7 @@ from torch.autograd import Variable
 import torch
 import torch.optim as optim
 from models.Siam_unet import SiamUNet
-from models.loss import calc_loss, FocalLoss2d
+from models.loss import calc_loss, FocalLoss2d, sigmoid_focalloss
 import utils.dataset as my_dataset
 import config.rssia_config as cfg
 import preprocessing.transforms as trans
@@ -51,7 +51,7 @@ def main():
             batch_x1, batch_x2, batch_y = Variable(batch_x1).cuda(), Variable(batch_x2).cuda(), Variable(batch_y).cuda()
             out = model(batch_x1, batch_x2)
             if(cfg.TRAIN_LOSS == 'focalloss'):
-                loss = FocalLoss2d(out,batch_y)
+                loss = sigmoid_focalloss(out,batch_y)
             else:
                 loss = calc_loss(out, batch_y)
             # train_loss += loss.data[0]

@@ -2,12 +2,14 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch
 import torch.optim as optim
+import torch.nn as nn
 from models.Siam_unet import SiamUNet
-from models.loss import calc_loss, FocalLoss2d, sigmoid_focalloss
+from models.loss import calc_loss, FocalLoss2d
 import utils.dataset as my_dataset
 import config.rssia_config as cfg
 import preprocessing.transforms as trans
 import os
+from tensorboardX import SummaryWriter
 
 def main():
     best_metric = 0
@@ -30,13 +32,21 @@ def main():
         checkpoint = torch.load(cfg.TRAINED_LAST_MODEL)
         model.load_state_dict(checkpoint['state_dict'])
         print('resume success \n')
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+        model = nn.DataParallel(model)
 
     if torch.cuda.is_available():
         model.cuda()
 
+
+    # if torch.cuda.is_available():
+    #     model.cuda()
+
     # params = [{'params': md.parameters()} for md in model.children() if md in [model.classifier]]
     optimizer = optim.Adam(model.parameters(), lr=cfg.INIT_LEARNING_RATE, weight_decay=cfg.DECAY)
-
+    fl = FocalLoss2d(gamma=cfg.FOCAL_LOSS_GAMMA)
     Loss_list = []
     Accuracy_list = []
 
@@ -51,7 +61,7 @@ def main():
             batch_x1, batch_x2, batch_y = Variable(batch_x1).cuda(), Variable(batch_x2).cuda(), Variable(batch_y).cuda()
             out = model(batch_x1, batch_x2)
             if(cfg.TRAIN_LOSS == 'focalloss'):
-                loss = sigmoid_focalloss(out,batch_y)
+                loss = fl(torch.sigmoid(out),batch_y)
             else:
                 loss = calc_loss(out, batch_y)
             # train_loss += loss.data[0]
@@ -69,8 +79,10 @@ def main():
                 val_loss = 0
                 for v_batch_idx, val_batch in enumerate(val_dataloader):
                     v_batch_x1, v_batch_x2, v_batch_y, _, _, _ = val_batch
+                    v_batch_x1, v_batch_x2, v_batch_y = Variable(v_batch_x1).cuda(), Variable(v_batch_x2).cuda(), Variable(
+                        v_batch_y).cuda()
                     val_out = model(v_batch_x1,v_batch_x2)
-                    val_loss += calc_loss(val_out, v_batch_y)
+                    val_loss += fl(torch.sigmoid(out),batch_y)
                 print("Train Loss: {:.6f}  Val Loss: {:.10f}".format(loss, val_loss))
 
         if (epoch+1)%5 == 0:

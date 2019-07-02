@@ -48,7 +48,7 @@ def prediction(img1, img2, label, weight):
     model.load_state_dict(checkpoint['state_dict'])
     test_data = my_dataset.Dataset(cfg.TEST_DATA_PATH, '',cfg.TEST_TXT_PATH, 'test', transform=True, transform_med=test_transform_det)
     test_dataloader = DataLoader(test_data, batch_size=cfg.TEST_BATCH_SIZE, shuffle=False, num_workers=8, pin_memory=True)
-    crop = 0
+    crop = 1
 
     rows = 12
     cols = 12

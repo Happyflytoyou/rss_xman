@@ -47,43 +47,18 @@ def calc_loss(prediction, target, bce_weight=0.5, margin=2):
 
     loss = bce * bce_weight + dice * (1 - bce_weight)
 
-    return loss
+    return bce
 
-
-class FocalLoss2d(nn.Module):
-
-    def __init__(self,alpha=0.25, gamma=0, weight=None, size_average=True):
+class FocalLoss2d(torch.nn.Module):
+    def __init__(self, weight=None, size_average=True, ignore_index=255):
         super(FocalLoss2d, self).__init__()
-        self.gamma = gamma
-        self.weight = weight
-        self.alpha = alpha
-        self.size_average = size_average
+        self.gamma = 2
+        self.nll_loss = torch.nn.NLLLoss2d(weight, size_average)
 
-    def forward(self, input, target):
-        if input.dim()>2:
-            input = input.contiguous().view(input.size(0), input.size(1), -1)
-            input = input.transpose(1,2)
-            input = input.contiguous().view(-1, input.size(2)).squeeze()
-        if target.dim()==4:
-            target = target.contiguous().view(target.size(0), target.size(1), -1)
-            target = target.transpose(1,2)
-            target = target.contiguous().view(-1, target.size(2)).squeeze()
-        elif target.dim()==3:
-            target = target.view(-1)
-        else:
-            target = target.view(-1, 1)
-        alpha = self.alpha
+    def forward(self, inputs, targets):
+        return self.nll_loss((1 - F.sigmoid(inputs, 1)) ** self.gamma * F.logsigmoid(inputs, 1), targets)
+def sigmoid_focalloss(input, target, gamma):
+    return F.nll_loss((1 - F.sigmoid(input)) ** gamma * F.logsigmoid(input), target)
 
-        # compute the negative likelyhood
-        weight = Variable(self.weight)
-        logpt = -F.binary_cross_entropy(input, target)
-        pt = torch.exp(logpt)
 
-        # compute the loss
-        loss = -1 * alpha * ((1-pt)**self.gamma) * logpt
 
-        # averaging (or not) loss
-        if self.size_average:
-            return loss.mean()
-        else:
-            return loss.sum()

@@ -137,12 +137,12 @@ class Dataset(Dataset):
     def data_transform(self, img1,img2,lbl):
         img1 = img1[:, :, ::-1]  # RGB -> BGR
         img1 = img1.astype(np.float64)
-        img1 -= cfg.T0_MEAN_VALUE
+        # img1 -= cfg.T0_MEAN_VALUE
         img1 = img1.transpose(2, 0, 1)
         img1 = torch.from_numpy(img1).float()
         img2 = img2[:, :, ::-1]  # RGB -> BGR
         img2 = img2.astype(np.float64)
-        img2 -= cfg.T1_MEAN_VALUE
+        # img2 -= cfg.T1_MEAN_VALUE
         img2 = img2.transpose(2, 0, 1)
         img2 = torch.from_numpy(img2).float()
         if self.flag != 'test':
@@ -164,17 +164,20 @@ class Dataset(Dataset):
             if self.transform_med != None:
                 img1 = self.transform_med(img1)
                 img2 = self.transform_med(img2)
+
         ####### load labels ############
 
         if img1_path.endswith('.tif'):
             import gdal
             img1 = gdal.Open(img1_path)
             img2 = gdal.Open(img2_path)
-            height = img1.RaasterYSize
+            height = img1.RasterYSize
             width = img1.RasterXSize
             img1 = img1.ReadAsArray(0, 0, width, height)
             img2 = img2.ReadAsArray(0, 0, width, height)
 
+            img1 = img1.transpose(2, 1, 0)
+            img2 = img2.transpose(2, 1, 0)
         img1 = np.array(img1, dtype=np.uint8)
         img2 = np.array(img2, dtype=np.uint8)
 
@@ -186,7 +189,7 @@ class Dataset(Dataset):
             label = np.array(label, dtype=np.int32)
 
         else:
-            label = np.zeros((height, width, 3), dtype=np.uint8)
+            label = np.zeros((height, width, 1), dtype=np.uint8)
         if self.transform:
             img1, img2, label = self.data_transform(img1, img2, label)
 

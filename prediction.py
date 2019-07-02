@@ -38,7 +38,7 @@ def prediction(img1, img2, label, weight):
     test_transform_det = trans.Compose([
         trans.Scale(cfg.TEST_TRANSFROM_SCALES),
     ])
-    model = SiamUNet()
+    model = SiamUNet(in_ch=4)
     model=torch.nn.DataParallel(model)
     if torch.cuda.is_available():
         model.cuda()

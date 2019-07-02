@@ -114,7 +114,7 @@ class Dataset(Dataset):
             self.label_ext = '.png'
             for idx , did in enumerate(open(self.img_txt_path)):
                 try:
-                    image1_name, image2_name, mask_name = did.strip("\n").split(' ')
+                    image1_name, image2_name, mask_name = did.strip("\n").strip(' ').split(' ')
                 except ValueError:  # Adhoc for test.
                     image_name = mask_name = did.strip("\n")
                 extract_name = image1_name[image1_name.rindex('/') +1: image1_name.rindex('.')]
@@ -127,7 +127,7 @@ class Dataset(Dataset):
         if self.flag == 'test':
 
             for idx, did in enumerate(open(self.img_txt_path)):
-              image1_name, image2_name = did.strip("\n").split(' ')
+              image1_name, image2_name = did.strip("\n").strip(' ').split(' ')
               img1_file = os.path.join(self.img_path, image1_name)
               img2_file = os.path.join(self.img_path, image2_name)
               img_label_pair_list.setdefault(idx, [img1_file, img2_file,None,image2_name])
@@ -154,26 +154,39 @@ class Dataset(Dataset):
     def __getitem__(self, index):
 
         img1_path,img2_path,label_path,filename = self.img_label_path_pairs[index]
+
+        if img1_path.endswith('.jpg') or img1_path.endswith('.png'):
         ####### load images #############
-        img1 = Image.open(img1_path)
-        img2 = Image.open(img2_path)
-        #print filename
-        height,width,_ = np.array(img1,dtype= np.uint8).shape
-        if self.transform_med != None:
-           img1 = self.transform_med(img1)
-           img2 = self.transform_med(img2)
-        img1 = np.array(img1,dtype= np.uint8)
-        img2 = np.array(img2,dtype= np.uint8)
+            img1 = Image.open(img1_path)
+            img2 = Image.open(img2_path)
+        # print filename
+            height, width, _ = np.array(img1, dtype=np.uint8).shape
+            if self.transform_med != None:
+                img1 = self.transform_med(img1)
+                img2 = self.transform_med(img2)
         ####### load labels ############
+
+        if img1_path.endswith('.tif'):
+            import gdal
+            img1 = gdal.Open(img1_path)
+            img2 = gdal.Open(img2_path)
+            height = img1.RaasterYSize
+            width = img1.RasterXSize
+            img1 = img1.ReadAsArray(0, 0, width, height)
+            img2 = img2.ReadAsArray(0, 0, width, height)
+
+        img1 = np.array(img1, dtype=np.uint8)
+        img2 = np.array(img2, dtype=np.uint8)
+
         if self.flag == 'train' or self.flag == 'val':
 
             label = Image.open(label_path)
             if self.transform_med != None:
                 label = self.transform_med(label)
-            label = np.array(label,dtype=np.int32)
+            label = np.array(label, dtype=np.int32)
 
         else:
-            label = np.zeros((height,width,3),dtype=np.uint8)
+            label = np.zeros((height, width, 3), dtype=np.uint8)
         if self.transform:
             img1, img2, label = self.data_transform(img1, img2, label)
 

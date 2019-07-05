@@ -3,8 +3,9 @@ from torch.autograd import Variable
 import torch
 import torch.optim as optim
 import torch.nn as nn
-from models.Siam_unet import SiamUNet
-from models.loss import calc_loss, FocalLoss2d
+from models.Siam_unet import SiamUNet, SiamUNetU
+from models.loss import calc_loss, FocalLoss2d, calc_loss_L4
+from torch.optim.lr_scheduler import StepLR
 import utils.dataset as my_dataset
 import config.rssia_config as cfg
 import preprocessing.transforms as trans
@@ -27,7 +28,7 @@ def main():
     train_dataloader = DataLoader(train_data, batch_size=cfg.BATCH_SIZE, shuffle=True, num_workers=8, pin_memory=True)
     val_dataloader = DataLoader(val_data, batch_size=cfg.BATCH_SIZE, shuffle=False, num_workers=8, pin_memory=True)
 
-    model = SiamUNet()
+    model = SiamUNet(in_ch=3)
     if cfg.RESUME:
         checkpoint = torch.load(cfg.TRAINED_LAST_MODEL)
         model.load_state_dict(checkpoint['state_dict'])
@@ -49,8 +50,9 @@ def main():
     fl = FocalLoss2d(gamma=cfg.FOCAL_LOSS_GAMMA)
     Loss_list = []
     Accuracy_list = []
-
+    scheduler = StepLR(optimizer,step_size=8, gamma=0.1)
     for epoch in range(cfg.EPOCH):
+        scheduler.step()
         print('epoch {}'.format(epoch+1))
         #training--------------------------
         train_loss = 0
@@ -59,14 +61,12 @@ def main():
             model.train()
             batch_x1, batch_x2, batch_y, _, _, _ = train_batch
             batch_x1, batch_x2, batch_y = Variable(batch_x1).cuda(), Variable(batch_x2).cuda(), Variable(batch_y).cuda()
-            out = model(batch_x1, batch_x2)
-            if(cfg.TRAIN_LOSS == 'focalloss'):
-                loss = fl(torch.sigmoid(out),batch_y)
-            else:
-                loss = calc_loss(out, batch_y)
+            outputs = model(batch_x1, batch_x2)
+            del batch_x1, batch_x2
+            loss = calc_loss_L4(outputs[0], outputs[1], outputs[2], outputs[3], batch_y)
             # train_loss += loss.data[0]
             #should change after
-            pred = torch.max(out, 1)[0]
+            # pred = torch.max(out, 1)[0]
             # train_correct = (pred == batch_y).sum()
             # train_acc += train_correct.data[0]
             optimizer.zero_grad()
@@ -81,14 +81,16 @@ def main():
                     v_batch_x1, v_batch_x2, v_batch_y, _, _, _ = val_batch
                     v_batch_x1, v_batch_x2, v_batch_y = Variable(v_batch_x1).cuda(), Variable(v_batch_x2).cuda(), Variable(
                         v_batch_y).cuda()
-                    val_out = model(v_batch_x1,v_batch_x2)
-                    val_loss += fl(torch.sigmoid(out),batch_y)
+                    val_outs = model(v_batch_x1,v_batch_x2)
+                    del v_batch_x1, v_batch_x2
+                    val_loss += float(calc_loss_L4(val_outs[0], val_outs[1], val_outs[2], val_outs[3],v_batch_y))
+                del val_outs, v_batch_y
                 print("Train Loss: {:.6f}  Val Loss: {:.10f}".format(loss, val_loss))
 
         if (epoch+1)%5 == 0:
             torch.save({'state_dict':model.state_dict()},
-                       os.path.join(cfg.SAVE_MODEL_PATH, 'model'+str(epoch+1)+'.pth'))
-        torch.save({'state_dict': model.state_dict()},
-                   os.path.join(cfg.SAVE_MODEL_PATH, 'model_last.pth'))
+                       os.path.join(cfg.SAVE_MODEL_PATH, cfg.TRAIN_LOSS, 'model_tif_'+str(epoch+1)+'.pth'))
+    torch.save({'state_dict': model.state_dict()},
+                   os.path.join(cfg.SAVE_MODEL_PATH, cfg.TRAIN_LOSS, 'model_tif_last.pth'))
 if __name__ == '__main__':
     main()

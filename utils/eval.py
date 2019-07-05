@@ -35,3 +35,4 @@ def eval_cal(output,mask):
     F1=2*(precision*recall/(precision+recall))
 
     return precision,recall,F1
+    #FFFGGFG

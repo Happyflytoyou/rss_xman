@@ -5,6 +5,7 @@ import utils.dataset as my_dataset
 import cv2
 import numpy as np
 import config.rssia_config as cfg
+import os
 import preprocessing.transforms as trans
 from torch.utils.data import DataLoader
 from preprocessing.crop_img import splitimage
@@ -36,9 +37,9 @@ def prediction(img1, img2, label, weight):
         trans.Scale(cfg.TRANSFROM_SCALES),
     ])
     test_transform_det = trans.Compose([
-        trans.Scale(cfg.TEST_TRANSFROM_SCALES),
+        trans.Scale((960,960)),
     ])
-    model = SiamUNet(in_ch=4)
+    model = SiamUNet(in_ch=3)
     model=torch.nn.DataParallel(model)
     if torch.cuda.is_available():
         model.cuda()
@@ -46,16 +47,19 @@ def prediction(img1, img2, label, weight):
     # model.load_state_dict(torch.load(weight))
     checkpoint = torch.load(weight)
     model.load_state_dict(checkpoint['state_dict'])
+
     test_data = my_dataset.Dataset(cfg.TEST_DATA_PATH, '',cfg.TEST_TXT_PATH, 'test', transform=True, transform_med=test_transform_det)
+    # test_data = my_dataset.Dataset(cfg.VAL_DATA_PATH, cfg.VAL_LABEL_PATH,cfg.VAL_TXT_PATH, 'val', transform=True, transform_med=test_transform_det)
     test_dataloader = DataLoader(test_data, batch_size=cfg.TEST_BATCH_SIZE, shuffle=False, num_workers=8, pin_memory=True)
-    crop = 0
+    crop = 1
 
     rows = 12
     cols = 12
     i = 0
     for batch_idx, val_batch in enumerate(test_dataloader):
         model.eval()
-        batch_x1, batch_x2, _, _, h, w = val_batch
+        batch_x1, batch_x2, _, filename, h, w = val_batch
+        filename = filename[0].split('/')[-1]
         if crop:
             outputs = np.zeros((cfg.TEST_BATCH_SIZE,1,960, 960))
 
@@ -81,8 +85,13 @@ def prediction(img1, img2, label, weight):
                     j += h // cols
                 i += w // rows
 
-            cv2.imwrite("my_crop.png",outputs[batch_idx,0,:,:])
+
+            if not os.path.exists('./change'):
+                os.mkdir('./change')
+            print('./change/{}'.format(filename))
+            cv2.imwrite('./change/crop_{}'.format(filename), outputs[batch_idx,0,:,:])
         else:
+            batch_x1, batch_x2 = Variable(batch_x1).cuda(), Variable(batch_x2).cuda()
             with torch.no_grad():
                 output = model(batch_x1, batch_x2)
             output_w, output_h = output.shape[-2:]
@@ -90,7 +99,11 @@ def prediction(img1, img2, label, weight):
             output = output.data.cpu().numpy()  # .resize([80, 80, 1])
             output = np.where(output > cfg.THRESH, 255, 0)
             # output_final=cv2.merge(output)
-            cv2.imwrite('my.png', output)
+            if not os.path.exists('./change'):
+                os.mkdir('./change')
+
+            print('./change/{}'.format(filename))
+            cv2.imwrite('./change/{}'.format(filename), output)
         # img = Image.fromarray(outputs[batch_idx,:,:,:])
         # img.save('my.png')
         # img.show()
@@ -102,7 +115,8 @@ def prediction(img1, img2, label, weight):
 # img_2017/image_2017_960_960_10.png img_2018/image_2018_960_960_10.png
 if __name__ == "__main__":
 
-    weight="weights/model_last.pth"
+    weight="weights/model_tif_50.pth"
+    # weight="weights/model_tif_50.pth"
     img1 = "img_2017/image_2017_960_960_15_0_2.jpg"
     img2 = "img_2018/image_2018_960_960_15_0_2.jpg"
     label = "mask/mask_2017_2018_960_960_15_0_2.jpg"

@@ -27,7 +27,7 @@ def main():
     train_dataloader = DataLoader(train_data, batch_size=cfg.BATCH_SIZE, shuffle=True, num_workers=8, pin_memory=True)
     val_dataloader = DataLoader(val_data, batch_size=cfg.BATCH_SIZE, shuffle=False, num_workers=8, pin_memory=True)
 
-    model = SiamUNet(in_ch=4)
+    model = SiamUNet()
     if cfg.RESUME:
         checkpoint = torch.load(cfg.TRAINED_LAST_MODEL)
         model.load_state_dict(checkpoint['state_dict'])
@@ -87,7 +87,7 @@ def main():
 
         if (epoch+1)%5 == 0:
             torch.save({'state_dict':model.state_dict()},
-                       os.path.join(cfg.SAVE_MODEL_PATH, 'model_tif_'+str(epoch+1)+'.pth'))
+                       os.path.join(cfg.SAVE_MODEL_PATH, 'model'+str(epoch+1)+'.pth'))
         torch.save({'state_dict': model.state_dict()},
                    os.path.join(cfg.SAVE_MODEL_PATH, 'model_last.pth'))
 if __name__ == '__main__':

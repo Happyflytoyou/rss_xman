@@ -23,7 +23,7 @@ def get_green(file_name):
     green = nir_m_red / nir_p_red
 
     green_avg = np.mean(green)
-    green_mask = np.where(green < green_avg, 1, 0)
+    green_mask = np.where(green < 0.03, 1, 0)
     im_redBand_green_mask = np.array(im_redBand) / 1100 * green_mask
     im_greenBand_green_mask = np.array(im_greenBand) / 1100 * green_mask
     im_buleBand_green_mask = np.array(im_buleBand) / 1100 * green_mask
@@ -31,5 +31,4 @@ def get_green(file_name):
 
     out_png = cv2.merge([im_buleBand_green_mask, im_greenBand_green_mask, im_redBand_green_mask])
     out_png = (out_png) * 255
-    cv2.imwrite('green_black_18.png', out_png)
     return out_png

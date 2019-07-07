@@ -1,5 +1,5 @@
 import torch
-from models.Siam_unet import SiamUNet
+from models.Siam_unet import SiamUNet, SiamUNetU
 from torch.autograd import Variable
 import utils.dataset as my_dataset
 import cv2
@@ -39,7 +39,7 @@ def prediction(img1, img2, label, weight):
     test_transform_det = trans.Compose([
         trans.Scale((960,960)),
     ])
-    model = SiamUNet(in_ch=3)
+    model = SiamUNetU(in_ch=3)
     model=torch.nn.DataParallel(model)
     if torch.cuda.is_available():
         model.cuda()
@@ -48,10 +48,10 @@ def prediction(img1, img2, label, weight):
     checkpoint = torch.load(weight)
     model.load_state_dict(checkpoint['state_dict'])
 
-    test_data = my_dataset.Dataset(cfg.TEST_DATA_PATH, '',cfg.TEST_TXT_PATH, 'test', transform=True, transform_med=test_transform_det)
-    # test_data = my_dataset.Dataset(cfg.VAL_DATA_PATH, cfg.VAL_LABEL_PATH,cfg.VAL_TXT_PATH, 'val', transform=True, transform_med=test_transform_det)
+    # test_data = my_dataset.Dataset(cfg.TEST_DATA_PATH, '',cfg.TEST_TXT_PATH, 'test', transform=True, transform_med=test_transform_det)
+    test_data = my_dataset.Dataset(cfg.VAL_DATA_PATH, cfg.VAL_LABEL_PATH,cfg.VAL_TXT_PATH, 'val', transform=True, transform_med=test_transform_det)
     test_dataloader = DataLoader(test_data, batch_size=cfg.TEST_BATCH_SIZE, shuffle=False, num_workers=8, pin_memory=True)
-    crop = 1
+    crop = 0
 
     rows = 12
     cols = 12
@@ -59,7 +59,7 @@ def prediction(img1, img2, label, weight):
     for batch_idx, val_batch in enumerate(test_dataloader):
         model.eval()
         batch_x1, batch_x2, _, filename, h, w = val_batch
-        filename = filename[0].split('/')[-1]
+        filename = filename[0].split('/')[-1].replace('image','mask_2017').replace('.png','.tif')
         if crop:
             outputs = np.zeros((cfg.TEST_BATCH_SIZE,1,960, 960))
 
@@ -76,7 +76,7 @@ def prediction(img1, img2, label, weight):
                     with torch.no_grad():
                         output = model(batch_x1_ij, batch_x2_ij)
                     output_w, output_h = output.shape[-2:]
-                    output = torch.sigmoid(output).view(-1, output_w, output_h)
+                    output = torch.sigmoid(output).view(output_w, output_h, -1)
 
                     output = output.data.cpu().numpy()  # .resize([80, 80, 1])
                     output = np.where(output > cfg.THRESH, 255, 0)
@@ -85,6 +85,7 @@ def prediction(img1, img2, label, weight):
                     j += h // cols
                 i += w // rows
 
+            print(batch_idx)
 
             if not os.path.exists('./change'):
                 os.mkdir('./change')
@@ -115,8 +116,9 @@ def prediction(img1, img2, label, weight):
 # img_2017/image_2017_960_960_10.png img_2018/image_2018_960_960_10.png
 if __name__ == "__main__":
 
-    weight="weights/model_tif_50.pth"
-    # weight="weights/model_tif_50.pth"
+    # weight="weights/model_480*480_50.pth"
+    # weight="weights/model20_1.pth"
+    weight="weights/model_tif_rb_150.pth"
     img1 = "img_2017/image_2017_960_960_15_0_2.jpg"
     img2 = "img_2018/image_2018_960_960_15_0_2.jpg"
     label = "mask/mask_2017_2018_960_960_15_0_2.jpg"
